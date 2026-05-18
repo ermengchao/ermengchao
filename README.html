@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ermengchao profile preview</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --page: #f6f8fa;
+        --column-gap: 14px;
+        --row-gap: 22px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --page: #0d1117;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1180px, calc(100vw - 48px));
+        margin: 0 auto;
+        padding: 42px 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.04fr 1fr;
+        column-gap: var(--column-gap);
+        align-items: stretch;
+      }
+
+      .column {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: var(--row-gap);
+      }
+
+      .card {
+        display: block;
+        width: 100%;
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(560px, calc(100vw - 28px));
+          padding: 20px 0;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .column {
+          display: contents;
+        }
+
+        .preface {
+          order: 1;
+        }
+
+        .about-me {
+          order: 2;
+        }
+
+        .preference {
+          order: 3;
+        }
+
+        .about-my-github {
+          order: 4;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="grid" aria-label="GitHub profile">
+        <div class="column">
+          <picture class="card preface">
+            <source media="(prefers-color-scheme: dark)" srcset="./assets/preface/dark.png">
+            <source media="(prefers-color-scheme: light)" srcset="./assets/preface/light.png">
+            <img alt="Preface" src="./assets/preface/light.png">
+          </picture>
+
+          <picture class="card preference">
+            <source media="(prefers-color-scheme: dark)" srcset="./assets/preference/dark.png">
+            <source media="(prefers-color-scheme: light)" srcset="./assets/preference/light.png">
+            <img alt="Preference" src="./assets/preference/light.png">
+          </picture>
+        </div>
+
+        <div class="column">
+          <picture class="card about-me">
+            <source media="(prefers-color-scheme: dark)" srcset="./assets/about-me/dark.png">
+            <source media="(prefers-color-scheme: light)" srcset="./assets/about-me/light.png">
+            <img alt="About me" src="./assets/about-me/light.png">
+          </picture>
+
+          <picture class="card about-my-github">
+            <source media="(prefers-color-scheme: dark)" srcset="./assets/about-my-github/dark.png">
+            <source media="(prefers-color-scheme: light)" srcset="./assets/about-my-github/light.png">
+            <img alt="About my GitHub" src="./assets/about-my-github/light.png">
+          </picture>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

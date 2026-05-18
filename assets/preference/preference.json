@@ -1,0 +1,16 @@
+{
+  "preference": {
+    "language": [
+      " Rust", " Python",
+      " Swift", " TypeScript"
+    ],
+    "tech-stack": [
+      " Bun", " Next.js",
+      " GraphQL", " PostgreSQL"
+    ],
+    "linux-distro": [
+      " Arch Linux(btw)",
+      " NixOS", " Fedora"
+    ]
+  }
+}
