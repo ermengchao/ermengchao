@@ -15,7 +15,7 @@ const chromePath =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const htmlUrl = pathToFileURL(resolve(root, "README.html")).href;
 const outputDir = resolve(root, "assets/profile");
-const deviceScaleFactor = Number(process.env.PROFILE_DEVICE_SCALE_FACTOR || 1);
+const deviceScaleFactor = Number(process.env.PROFILE_DEVICE_SCALE_FACTOR || 2);
 const remoteDebuggingPort = await getAvailablePort();
 const renderTargets = [
   {
