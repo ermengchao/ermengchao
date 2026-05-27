@@ -75,19 +75,22 @@ function buildDesktopSvg(theme, cardImages) {
 }
 
 function buildMobileSvg(theme, cardImages) {
-  const width = 560;
-  const paddingY = 20;
-  let y = paddingY;
+  const contentWidth = 560;
+  const paddingX = 28;
+  const paddingTop = 42;
+  const paddingBottom = 72;
+  const width = contentWidth + paddingX * 2;
+  let y = paddingTop;
   const items = [];
 
   for (const card of [...cards].sort((a, b) => a.mobileOrder - b.mobileOrder)) {
     const image = cardImages[card.name];
-    const height = displayHeight(image, width);
-    items.push(imageElement(image, 0, y, width, height));
+    const height = displayHeight(image, contentWidth);
+    items.push(imageElement(image, paddingX, y, contentWidth, height));
     y += height;
   }
 
-  return svgDocument(width, y + paddingY, themes[theme], items, shadowThemes[theme].opacity);
+  return svgDocument(width, y + paddingBottom, themes[theme], items, shadowThemes[theme].opacity);
 }
 
 function readCardImage(name, theme) {
