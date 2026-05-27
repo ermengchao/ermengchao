@@ -15,7 +15,7 @@ const chromePath =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const htmlUrl = pathToFileURL(resolve(root, "README.html")).href;
 const outputDir = resolve(root, "assets/profile");
-const deviceScaleFactor = Number(process.env.PROFILE_DEVICE_SCALE_FACTOR || 2);
+const deviceScaleFactor = Number(process.env.PROFILE_DEVICE_SCALE_FACTOR || 3);
 const remoteDebuggingPort = await getAvailablePort();
 const renderTargets = [
   {
@@ -65,75 +65,75 @@ try {
 
   for (const targetConfig of renderTargets) {
     for (const colorScheme of ["light", "dark"]) {
-    const target = await createTarget(browserWsUrl);
-    const client = await connectCdp(target.webSocketDebuggerUrl);
+      const target = await createTarget(browserWsUrl);
+      const client = await connectCdp(target.webSocketDebuggerUrl);
 
-    try {
-      await client.send("Page.enable");
-      await client.send("Runtime.enable");
-      await client.send("Emulation.setEmulatedMedia", {
-        features: [{ name: "prefers-color-scheme", value: colorScheme }],
-      });
-      await client.send("Emulation.setDeviceMetricsOverride", {
-        width: targetConfig.viewportWidth,
-        height: 900,
-        deviceScaleFactor,
-        mobile: targetConfig.name === "mobile",
-      });
+      try {
+        await client.send("Page.enable");
+        await client.send("Runtime.enable");
+        await client.send("Emulation.setEmulatedMedia", {
+          features: [{ name: "prefers-color-scheme", value: colorScheme }],
+        });
+        await client.send("Emulation.setDeviceMetricsOverride", {
+          width: targetConfig.viewportWidth,
+          height: 900,
+          deviceScaleFactor,
+          mobile: targetConfig.name === "mobile",
+        });
 
-      const loaded = client.waitFor("Page.loadEventFired");
-      await client.send("Page.navigate", { url: htmlUrl });
-      await loaded;
-      await client.send("Runtime.evaluate", {
-        expression: "document.fonts ? document.fonts.ready : Promise.resolve()",
-        awaitPromise: true,
-      });
+        const loaded = client.waitFor("Page.loadEventFired");
+        await client.send("Page.navigate", { url: htmlUrl });
+        await loaded;
+        await client.send("Runtime.evaluate", {
+          expression: "document.fonts ? document.fonts.ready : Promise.resolve()",
+          awaitPromise: true,
+        });
 
-      const { result } = await client.send("Runtime.evaluate", {
-        expression: `
-          (() => {
-            const element = document.querySelector("main");
-            if (!element) throw new Error("Could not find <main> in README.html");
-            const rect = element.getBoundingClientRect();
-            return {
-              x: rect.x,
-              y: rect.y,
-              width: rect.width,
-              height: rect.height
-            };
-          })()
-        `,
-        returnByValue: true,
-      });
+        const { result } = await client.send("Runtime.evaluate", {
+          expression: `
+            (() => {
+              const element = document.querySelector("main");
+              if (!element) throw new Error("Could not find <main> in README.html");
+              const rect = element.getBoundingClientRect();
+              return {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height
+              };
+            })()
+          `,
+          returnByValue: true,
+        });
 
-      const clip = result.value;
-      await client.send("Emulation.setDeviceMetricsOverride", {
-        width: targetConfig.viewportWidth,
-        height: Math.ceil(clip.y + clip.height),
-        deviceScaleFactor,
-        mobile: targetConfig.name === "mobile",
-      });
+        const clip = result.value;
+        await client.send("Emulation.setDeviceMetricsOverride", {
+          width: targetConfig.viewportWidth,
+          height: Math.ceil(clip.y + clip.height),
+          deviceScaleFactor,
+          mobile: targetConfig.name === "mobile",
+        });
 
-      const screenshot = await client.send("Page.captureScreenshot", {
-        format: "png",
-        captureBeyondViewport: true,
-        clip: {
-          x: clip.x,
-          y: clip.y,
-          width: clip.width,
-          height: clip.height,
-          scale: 1,
-        },
-      });
+        const screenshot = await client.send("Page.captureScreenshot", {
+          format: "png",
+          captureBeyondViewport: true,
+          clip: {
+            x: clip.x,
+            y: clip.y,
+            width: clip.width,
+            height: clip.height,
+            scale: 1,
+          },
+        });
 
-      const outputPath = resolve(outputDir, `${colorScheme}${targetConfig.filenameSuffix}.png`);
-      writeFileSync(outputPath, Buffer.from(screenshot.data, "base64"));
-      console.log(`Rendered ${outputPath}`);
-    } finally {
-      client.close();
-      await closeTarget(browserWsUrl, target.id);
+        const outputPath = resolve(outputDir, `${colorScheme}${targetConfig.filenameSuffix}.png`);
+        writeFileSync(outputPath, Buffer.from(screenshot.data, "base64"));
+        console.log(`Rendered ${outputPath}`);
+      } finally {
+        client.close();
+        await closeTarget(browserWsUrl, target.id);
+      }
     }
-  }
   }
 } finally {
   chrome.kill("SIGTERM");
