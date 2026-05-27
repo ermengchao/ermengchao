@@ -19,6 +19,11 @@ const themes = {
   light: "#ffffff",
   dark: "#0e1116",
 };
+const shadowThemes = {
+  light: { opacity: 0.32 },
+  dark: { opacity: 0.48 },
+};
+const transparentInsetPx = 60;
 
 mkdirSync(outputDir, { recursive: true });
 
@@ -66,7 +71,7 @@ function buildDesktopSvg(theme, cardImages) {
     imageElement(cardImages["about-my-github"], rightX, paddingY + gridHeight - aboutGithubHeight, rightWidth, aboutGithubHeight),
   ];
 
-  return svgDocument(width, height, themes[theme], items);
+  return svgDocument(width, height, themes[theme], items, shadowThemes[theme].opacity);
 }
 
 function buildMobileSvg(theme, cardImages) {
@@ -82,7 +87,7 @@ function buildMobileSvg(theme, cardImages) {
     y += height;
   }
 
-  return svgDocument(width, y + paddingY, themes[theme], items);
+  return svgDocument(width, y + paddingY, themes[theme], items, shadowThemes[theme].opacity);
 }
 
 function readCardImage(name, theme) {
@@ -122,21 +127,34 @@ function displayHeight(image, displayWidth) {
 }
 
 function imageElement(image, x, y, width, height) {
+  const inset = (transparentInsetPx / image.width) * width;
+  const shadowX = x + inset;
+  const shadowY = y + inset;
+  const shadowWidth = width - inset * 2;
+  const shadowHeight = height - inset * 2;
+
   return [
+    `<rect x="${round(shadowX)}" y="${round(shadowY)}"`,
+    `  width="${round(shadowWidth)}" height="${round(shadowHeight)}"`,
+    `  rx="16" ry="16"`,
+    `  fill="#000000" filter="url(#cardShadow)" />`,
     `<image href="${image.href}"`,
     `  x="${round(x)}" y="${round(y)}"`,
     `  width="${round(width)}" height="${round(height)}"`,
-    `  preserveAspectRatio="xMinYMin meet"`,
-    `  filter="url(#cardShadow)" />`,
+    `  preserveAspectRatio="xMinYMin meet" />`,
   ].join("\n");
 }
 
-function svgDocument(width, height, background, items) {
+function svgDocument(width, height, background, items, shadowOpacity = 0.32) {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${round(width)}" height="${round(height)}" viewBox="0 0 ${round(width)} ${round(height)}">`,
     "<defs>",
-    '  <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%">',
-    '    <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000000" flood-opacity="0.21" />',
+    '  <filter id="cardShadow" x="-35%" y="-30%" width="170%" height="190%">',
+    `    <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="blur" />`,
+    `    <feOffset in="blur" dx="0" dy="18" result="offsetBlur" />`,
+    `    <feFlood flood-color="#000000" flood-opacity="${shadowOpacity}" result="shadowColor" />`,
+    `    <feComposite in="shadowColor" in2="offsetBlur" operator="in" result="shadow" />`,
+    `    <feMerge><feMergeNode in="shadow" /></feMerge>`,
     "  </filter>",
     "</defs>",
     `<rect width="100%" height="100%" fill="${background}" />`,
