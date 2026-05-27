@@ -10,11 +10,13 @@
         --page: #f6f8fa;
         --column-gap: 14px;
         --row-gap: 22px;
+        --card-shadow: 0 18px 28px #00000040;
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
           --page: #0d1117;
+          --card-shadow: 0 18px 30px #00000060;
         }
       }
 
@@ -57,6 +59,7 @@
         display: block;
         width: 100%;
         height: auto;
+        filter: drop-shadow(var(--card-shadow));
       }
 
       @media (max-width: 760px) {
