@@ -3,8 +3,8 @@
     "update:about-my-github": "node scripts/update-about-github.mjs",
     "generate:images": "fish scripts/generate-images.fish",
     "render:profile": "node scripts/render-profile.mjs",
-    "build": "npm run update:about-my-github && npm run generate:images && npm run render:profile",
-    "daily:update-about-github": "npm run build"
+    "build": "bun run update:about-my-github && bun run generate:images && bun run render:profile",
+    "daily:update-about-github": "bun run build"
   },
   "dependencies": {},
   "devDependencies": {

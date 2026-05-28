@@ -1,4 +1,4 @@
-name: Daily update about-my-github
+name: Weekly update about-my-github
 
 on:
   workflow_dispatch:
