@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -13,24 +13,33 @@ const cards = [
   { name: "about-me", desktopColumn: "right", mobileOrder: 2 },
   { name: "preference", desktopColumn: "left", mobileOrder: 3 },
   { name: "about-my-github", desktopColumn: "right", mobileOrder: 4 },
-];
+] as const;
 
 const themes = {
   light: "#ffffff",
   dark: "#0e1116",
-};
+} as const;
 const shadowThemes = {
   light: { opacity: 0.32 },
   dark: { opacity: 0.48 },
 };
 const transparentInsetPx = 60;
 
+type Theme = keyof typeof themes;
+type CardName = typeof cards[number]["name"];
+type CardImage = {
+  href: string;
+  width: number;
+  height: number;
+};
+type CardImages = Record<CardName, CardImage>;
+
 mkdirSync(outputDir, { recursive: true });
 
-for (const theme of Object.keys(themes)) {
+for (const theme of Object.keys(themes) as Theme[]) {
   const cardImages = Object.fromEntries(
     cards.map((card) => [card.name, readCardImage(card.name, theme)]),
-  );
+  ) as CardImages;
 
   const desktop = buildDesktopSvg(theme, cardImages);
   const desktopPath = resolve(outputDir, `${theme}.svg`);
@@ -43,7 +52,7 @@ for (const theme of Object.keys(themes)) {
   console.log(`Rendered ${mobilePath}`);
 }
 
-function buildDesktopSvg(theme, cardImages) {
+function buildDesktopSvg(theme: Theme, cardImages: CardImages) {
   const width = 1276;
   const contentWidth = 1180;
   const paddingX = 48;
@@ -74,7 +83,7 @@ function buildDesktopSvg(theme, cardImages) {
   return svgDocument(width, height, themes[theme], items, shadowThemes[theme].opacity);
 }
 
-function buildMobileSvg(theme, cardImages) {
+function buildMobileSvg(theme: Theme, cardImages: CardImages) {
   const contentWidth = 560;
   const paddingX = 28;
   const paddingTop = 42;
@@ -93,7 +102,7 @@ function buildMobileSvg(theme, cardImages) {
   return svgDocument(width, y + paddingBottom, themes[theme], items, shadowThemes[theme].opacity);
 }
 
-function readCardImage(name, theme) {
+function readCardImage(name: CardName, theme: Theme): CardImage {
   const path = resolve(root, `assets/${name}/${theme}.svg`);
   const svg = readFileSync(path, "utf8");
   const match = svg.match(/<image[^>]+href="data:image\/png;base64,([^"]+)"/);
@@ -112,7 +121,7 @@ function readCardImage(name, theme) {
   };
 }
 
-function readPngDimensions(buffer) {
+function readPngDimensions(buffer: Buffer) {
   const pngSignature = "89504e470d0a1a0a";
 
   if (buffer.subarray(0, 8).toString("hex") !== pngSignature) {
@@ -125,11 +134,11 @@ function readPngDimensions(buffer) {
   };
 }
 
-function displayHeight(image, displayWidth) {
+function displayHeight(image: CardImage, displayWidth: number) {
   return (displayWidth * image.height) / image.width;
 }
 
-function imageElement(image, x, y, width, height) {
+function imageElement(image: CardImage, x: number, y: number, width: number, height: number) {
   const inset = (transparentInsetPx / image.width) * width;
   const shadowX = x + inset;
   const shadowY = y + inset;
@@ -148,7 +157,13 @@ function imageElement(image, x, y, width, height) {
   ].join("\n");
 }
 
-function svgDocument(width, height, background, items, shadowOpacity = 0.32) {
+function svgDocument(
+  width: number,
+  height: number,
+  background: string,
+  items: string[],
+  shadowOpacity = 0.32,
+) {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${round(width)}" height="${round(height)}" viewBox="0 0 ${round(width)} ${round(height)}">`,
     "<defs>",
@@ -167,6 +182,6 @@ function svgDocument(width, height, background, items, shadowOpacity = 0.32) {
   ].join("\n");
 }
 
-function round(value) {
+function round(value: number) {
   return Number(value.toFixed(3));
 }

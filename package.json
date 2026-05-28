@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "update:about-my-github": "node scripts/update-about-github.mjs",
+    "update:about-my-github": "bun run scripts/update-about-github.ts",
     "generate:images": "fish scripts/generate-images.fish",
-    "render:profile": "node scripts/render-profile.mjs",
+    "render:profile": "bun run scripts/render-profile.ts",
     "build": "bun run update:about-my-github && bun run generate:images && bun run render:profile",
     "daily:update-about-github": "bun run build"
   },

@@ -13,7 +13,38 @@ if (!token) {
   throw new Error("Missing GITHUB_PAT. Export a GitHub token before running this script.");
 }
 
-async function graphql(query, variables) {
+type GraphqlVariables = {
+  login: string;
+  from: string;
+  to: string;
+  after: string | null;
+};
+
+type GitHubStatsResponse = {
+  user: {
+    contributionsCollection: {
+      totalCommitContributions: number;
+    };
+    pullRequests: {
+      totalCount: number;
+    };
+    issues: {
+      totalCount: number;
+    };
+    repositories: {
+      nodes: Array<{
+        isFork: boolean;
+        stargazerCount: number;
+      }>;
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string | null;
+      };
+    };
+  } | null;
+};
+
+async function graphql(query: string, variables: GraphqlVariables): Promise<GitHubStatsResponse> {
   const response = await fetch("https://api.github.com/graphql", {
     method: "POST",
     headers: {
@@ -23,10 +54,14 @@ async function graphql(query, variables) {
     body: JSON.stringify({ query, variables }),
   });
 
-  const body = await response.json();
+  const body = await response.json() as { data?: GitHubStatsResponse; errors?: unknown };
 
   if (!response.ok || body.errors) {
     throw new Error(JSON.stringify(body.errors || body, null, 2));
+  }
+
+  if (!body.data) {
+    throw new Error("GitHub GraphQL response did not include data.");
   }
 
   return body.data;
@@ -62,7 +97,7 @@ const query = `
   }
 `;
 
-let after = null;
+let after: string | null = null;
 let stars = 0;
 let commitsThisYear = 0;
 let totalPRs = 0;
@@ -93,7 +128,7 @@ do {
 
 let profile = readFileSync(jsonPath, "utf8");
 
-function replaceNumber(label, value) {
+function replaceNumber(label: string, value: number) {
   const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`(".*?${escapedLabel}"\\s*:\\s*)\\d+`);
 
