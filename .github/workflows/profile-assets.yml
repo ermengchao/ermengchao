@@ -1,0 +1,26 @@
+name: Daily update about-my-github
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs every Sunday at 00:00 UTC.
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-assets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    uses: ./.github/workflows/_generate-about-my-github.yml
+    secrets: inherit
+
+  deploy:
+    needs: generate
+    if: needs.generate.outputs.assets_changed == 'true'
+    uses: ./.github/workflows/_deploy-generated-assets.yml
+    permissions:
+      contents: write

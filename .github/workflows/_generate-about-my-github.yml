@@ -1,0 +1,110 @@
+name: Generate about-my-github assets
+
+on:
+  workflow_call:
+    outputs:
+      assets_changed:
+        description: Whether generated assets changed.
+        value: ${{ jobs.generate.outputs.assets_changed }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      assets_changed: ${{ steps.diff.outputs.assets_changed }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_PAT || github.token }}
+      XDG_CONFIG_HOME: ${{ github.workspace }}/.config
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl fd-find fish fontconfig
+          sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
+
+      - name: Install SF Mono Nerd Font
+        run: |
+          mkdir -p "$HOME/.local/share/fonts/SFMonoNerdFont" "$HOME/.config/fontconfig"
+          curl -fsSL -o "$HOME/.local/share/fonts/SFMonoNerdFont/SFMonoNerdFont-Regular.otf" \
+            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_local/share/fonts/SFMonoNerdFont-Regular.otf
+          cat > "$HOME/.config/fontconfig/fonts.conf" <<'EOF'
+          <?xml version="1.0"?>
+          <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+          <fontconfig>
+            <alias>
+              <family>SF Mono Nerd Font</family>
+              <prefer>
+                <family>SFMono Nerd Font</family>
+              </prefer>
+            </alias>
+          </fontconfig>
+          EOF
+          fc-cache -f
+          fc-match "SF Mono Nerd Font"
+
+      - name: Install codesnap
+        run: cargo install codesnap-cli --locked --version 0.13.1
+
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Configure codesnap
+        run: |
+          mkdir -p "$XDG_CONFIG_HOME/codesnap/remote_themes"
+          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/catppuccin-latte.json" \
+            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_config/codesnap/catppuccin-latte.json
+          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/catppuccin-mocha.json" \
+            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_config/codesnap/catppuccin-mocha.json
+          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Latte.tmTheme" \
+            "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Latte.tmTheme"
+          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Mocha.tmTheme" \
+            "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Mocha.tmTheme"
+          node <<'EOF'
+          const { readFileSync, writeFileSync } = require("node:fs");
+          const { join } = require("node:path");
+
+          const codesnapDir = join(process.env.XDG_CONFIG_HOME, "codesnap");
+          const themesDir = join(codesnapDir, "remote_themes");
+
+          for (const filename of ["catppuccin-latte.json", "catppuccin-mocha.json"]) {
+            const path = join(codesnapDir, filename);
+            const config = JSON.parse(readFileSync(path, "utf8"));
+            config.snapshot_config.themes_folders = [themesDir];
+            config.snapshot_config.fonts_folders = [];
+            writeFileSync(path, JSON.stringify(config, null, 2));
+          }
+          EOF
+
+      - name: Update about-my-github and render assets
+        run: npm run daily:update-about-github
+
+      - name: Check generated changes
+        id: diff
+        run: |
+          if git diff --quiet -- assets; then
+            echo "assets_changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "assets_changed=true" >> "$GITHUB_OUTPUT"
+          tar -czf generated-assets.tgz assets
+
+      - name: Upload generated assets
+        if: steps.diff.outputs.assets_changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-assets
+          path: generated-assets.tgz
+          retention-days: 1
