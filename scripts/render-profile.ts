@@ -23,7 +23,8 @@ const shadowThemes = {
   light: { opacity: 0.32 },
   dark: { opacity: 0.48 },
 };
-const transparentInsetPx = 60;
+// CodeSnap adds 48px of transparent padding around the card before scale-factor is applied.
+const transparentInsetPx = 48 * 5;
 
 type Theme = keyof typeof themes;
 type CardName = typeof cards[number]["name"];
