@@ -36,9 +36,9 @@ jobs:
 
       - name: Install SF Mono Nerd Font
         run: |
-          mkdir -p "$HOME/.local/share/fonts/SFMonoNerdFont" "$HOME/.config/fontconfig"
-          curl -fsSL -o "$HOME/.local/share/fonts/SFMonoNerdFont/SFMonoNerdFont-Regular.otf" \
-            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_local/share/fonts/SFMonoNerdFont-Regular.otf
+          mkdir -p "$HOME/.local/share/fonts/SF-Mono-NerdFont" "$HOME/.config/fontconfig"
+          curl -fsSL -o "$HOME/.local/share/fonts/SF-Mono-NerdFont/SFMonoNerdFont-Regular.otf" \
+            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_local/share/fonts/SF-Mono-NerdFont/SFMonoNerdFont-Regular.otf
           cat > "$HOME/.config/fontconfig/fonts.conf" <<'EOF'
           <?xml version="1.0"?>
           <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
