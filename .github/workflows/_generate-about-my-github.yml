@@ -14,7 +14,7 @@ jobs:
       assets_changed: ${{ steps.diff.outputs.assets_changed }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_PAT || github.token }}
-      XDG_CONFIG_HOME: ${{ github.workspace }}/.config
+      XDG_CONFIG_HOME: ${{ github.workspace }}/.runtime-config
 
     steps:
       - name: Checkout
@@ -37,8 +37,8 @@ jobs:
       - name: Install SF Mono Nerd Font
         run: |
           mkdir -p "$HOME/.local/share/fonts/SF-Mono-NerdFont" "$HOME/.config/fontconfig"
-          curl -fsSL -o "$HOME/.local/share/fonts/SF-Mono-NerdFont/SFMonoNerdFont-Regular.otf" \
-            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_local/share/fonts/SF-Mono-NerdFont/SFMonoNerdFont-Regular.otf
+          cp .local/fonts/SF-Mono-NerdFont/*.otf \
+            "$HOME/.local/share/fonts/SF-Mono-NerdFont/"
           cat > "$HOME/.config/fontconfig/fonts.conf" <<'EOF'
           <?xml version="1.0"?>
           <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
@@ -63,10 +63,7 @@ jobs:
       - name: Configure codesnap
         run: |
           mkdir -p "$XDG_CONFIG_HOME/codesnap/remote_themes"
-          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/catppuccin-latte.json" \
-            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_config/codesnap/catppuccin-latte.json
-          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/catppuccin-mocha.json" \
-            https://github.com/ermengchao/dotfiles/raw/refs/heads/main/home/dot_config/codesnap/catppuccin-mocha.json
+          cp .config/codesnap/*.json "$XDG_CONFIG_HOME/codesnap/"
           curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Latte.tmTheme" \
             "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Latte.tmTheme"
           curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Mocha.tmTheme" \
