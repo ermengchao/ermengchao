@@ -1,10 +1,10 @@
 {
   "scripts": {
     "update:about-my-github": "bun run scripts/update-about-github.ts",
-    "generate:images": "fish scripts/generate-images.fish",
+    "generate:images": "bun run scripts/generate-images.ts",
     "render:profile": "bun run scripts/render-profile.ts",
-    "build": "bun run update:about-my-github && bun run generate:images && bun run render:profile",
-    "daily:update-about-github": "bun run build"
+    "build": "bun run generate:images && bun run render:profile",
+    "daily:update-about-github": "bun run update:about-my-github"
   },
   "dependencies": {},
   "devDependencies": {

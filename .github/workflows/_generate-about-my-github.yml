@@ -11,7 +11,7 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     outputs:
-      assets_changed: ${{ steps.diff.outputs.assets_changed }}
+      assets_changed: ${{ steps.diff.outputs.assets_changed || 'false' }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_PAT || github.token }}
       XDG_CONFIG_HOME: ${{ github.workspace }}/.runtime-config
@@ -19,75 +19,68 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          lfs: true
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
+      - name: Update GitHub data
+        id: data
+        run: |
+          bun run update:about-my-github "${{ github.repository_owner }}"
+
+          if git diff --quiet -- assets/about-my-github/about-my-github.json; then
+            printf 'changed=false\n' >> "$GITHUB_OUTPUT"
+          else
+            printf 'changed=true\n' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Rust
+        if: steps.data.outputs.changed == 'true'
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install system tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl fd-find fish fontconfig
-          sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
-
-      - name: Install SF Mono Nerd Font
-        run: |
-          mkdir -p "$HOME/.local/share/fonts/SF-Mono-NerdFont" "$HOME/.config/fontconfig"
-          cp .local/fonts/SF-Mono-NerdFont/*.otf \
-            "$HOME/.local/share/fonts/SF-Mono-NerdFont/"
-          cat > "$HOME/.config/fontconfig/fonts.conf" <<'EOF'
-          <?xml version="1.0"?>
-          <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-          <fontconfig>
-            <alias>
-              <family>SF Mono Nerd Font</family>
-              <prefer>
-                <family>SFMono Nerd Font</family>
-              </prefer>
-            </alias>
-          </fontconfig>
-          EOF
-          fc-cache -f
-          fc-match "SF Mono Nerd Font"
-
-      - name: Install codesnap
-        run: cargo install codesnap-cli --locked --version 0.13.1
-
       - name: Install Bun dependencies
+        if: steps.data.outputs.changed == 'true'
         run: bun install
 
+      - name: Install codesnap
+        if: steps.data.outputs.changed == 'true'
+        run: cargo install codesnap-cli --locked --version 0.13.1
+
       - name: Configure codesnap
+        if: steps.data.outputs.changed == 'true'
         run: |
-          mkdir -p "$XDG_CONFIG_HOME/codesnap/remote_themes"
-          cp .config/codesnap/*.json "$XDG_CONFIG_HOME/codesnap/"
-          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Latte.tmTheme" \
-            "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Latte.tmTheme"
-          curl -fsSL -o "$XDG_CONFIG_HOME/codesnap/remote_themes/Catppuccin Mocha.tmTheme" \
-            "https://raw.githubusercontent.com/catppuccin/bat/main/themes/Catppuccin%20Mocha.tmTheme"
-          node <<'EOF'
-          const { readFileSync, writeFileSync } = require("node:fs");
-          const { join } = require("node:path");
+          mkdir -p "$XDG_CONFIG_HOME/codesnap"
+          cp -R .config/codesnap/. "$XDG_CONFIG_HOME/codesnap/"
 
-          const codesnapDir = join(process.env.XDG_CONFIG_HOME, "codesnap");
-          const themesDir = join(codesnapDir, "remote_themes");
+          bun -e '
+            import { readFileSync, writeFileSync } from "node:fs";
+            import { join } from "node:path";
 
-          for (const filename of ["catppuccin-latte.json", "catppuccin-mocha.json"]) {
-            const path = join(codesnapDir, filename);
-            const config = JSON.parse(readFileSync(path, "utf8"));
-            config.snapshot_config.themes_folders = [themesDir];
-            config.snapshot_config.fonts_folders = [];
-            writeFileSync(path, JSON.stringify(config, null, 2));
-          }
-          EOF
+            const codesnapDir = join(process.env.XDG_CONFIG_HOME!, "codesnap");
+            const themesDir = join(codesnapDir, "remote_themes");
+            const fontsDir = join(codesnapDir, "remote_fonts");
 
-      - name: Update about-my-github and render assets
-        run: bun run daily:update-about-github
+            for (const filename of ["catppuccin-latte.json", "catppuccin-mocha.json"]) {
+              const path = join(codesnapDir, filename);
+              const config = JSON.parse(readFileSync(path, "utf8"));
+              config.snapshot_config.themes_folders = [themesDir];
+              config.snapshot_config.fonts_folders = [fontsDir];
+              writeFileSync(path, JSON.stringify(config, null, 2));
+            }
+          '
+
+      - name: Generate images
+        if: steps.data.outputs.changed == 'true'
+        run: |
+          bun run generate:images
+          bun run render:profile
 
       - name: Check generated changes
+        if: steps.data.outputs.changed == 'true'
         id: diff
         run: |
           if git diff --quiet -- assets; then
